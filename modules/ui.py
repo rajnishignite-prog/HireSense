@@ -51,7 +51,7 @@ def render_app() -> None:
 
     # 1. Page config
     st.set_page_config(
-        page_title="ResumeIQ · AI Screening",
+        page_title="HireSense · AI Screening",
         page_icon="🎯",
         layout="wide",
         initial_sidebar_state="expanded",

@@ -1,100 +1,82 @@
 """
 modules/components.py
 =====================
-Reusable Streamlit UI components.
+Reusable Streamlit UI components for HireSense.
 
-Each function renders one isolated piece of the UI:
-  - render_hero()           → top title + subtitle
-  - render_sidebar()        → config panel (Gemini toggle, how-it-works)
-  - render_input_panel()    → JD textarea + PDF uploader
-  - render_summary_metrics()→ 4-column metric strip
-  - render_candidate_card() → individual result card (rich HTML)
+Uses native Streamlit elements only — no raw HTML cards —
+so output always renders correctly regardless of Streamlit version.
 """
 
 import streamlit as st
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
 # HERO
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
 
 def render_hero() -> None:
     """Render the branded page header."""
-    st.markdown("""
-    <div class="hero">
-        <span class="hero-title">ResumeIQ</span>
-        <span class="hero-badge">AI · MVP</span>
-    </div>
-    <p class="hero-sub">
-        Drop a job description + candidate PDFs — get ranked, scored,
-        and analysed results instantly.
-    </p>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        "<h1 style='font-size:2.4rem;font-weight:800;margin-bottom:0;'>🎯 HireSense</h1>",
+        unsafe_allow_html=True,
+    )
+    st.caption("AI-powered resume screening · Gemini 2.5 Flash Lite · sentence-transformers")
+    st.divider()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
 # SIDEBAR
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
 
 def render_sidebar() -> None:
     """
     Render the configuration sidebar.
-
-    API key is read from the .env file (via config.py) — NOT entered here.
-    The sidebar shows which engine is active based on what key is loaded.
+    Shows which LLM is active based on .env — no user key input.
     """
     from modules.config import GOOGLE_API_KEY, active_llm
 
     with st.sidebar:
-        st.markdown("### ⚙️ Configuration")
-        st.markdown("---")
+        st.markdown("## ⚙️ HireSense")
+        st.divider()
 
-        # ── Active LLM status ────────────────────────────────────────────────
         st.markdown("#### 🔌 Active LLM")
-
         if GOOGLE_API_KEY:
-            st.success("✨ **Gemini 2.5 Flash Lite** — active (free)", icon="✅")
+            st.success(" Gemini 2.5 Flash Lite — active", icon="✅")
         else:
             st.warning(
-                "No `GOOGLE_API_KEY` found in `.env`.\n\n"
-                "Using **keyword rules** fallback instead.",
+                "No `GOOGLE_API_KEY` in `.env`.\n\nUsing keyword rules fallback.",
                 icon="⚠️",
             )
 
-        st.markdown("---")
-
-        # ── Setup instructions ───────────────────────────────────────────────
-        st.markdown("#### 🔑 Get your free key")
+        st.divider()
+        st.markdown("#### 🔑 Get key")
         st.markdown(
-            "1. Go to [aistudio.google.com](https://aistudio.google.com)\n"
-            "2. Click **Get API key** — free, no credit card\n"
-            "3. Add it to your `.env` file:"
+            "1. [aistudio.google.com](https://aistudio.google.com)\n"
+            "2. Click **Get API key** — no credit card\n"
+            "3. Add to `.env`:"
         )
-        st.code("GOOGLE_API_KEY=AIza-your-key-here", language="bash")
-        st.caption("`.env` is in `.gitignore` — never committed to GitHub.")
+        st.code("GOOGLE_API_KEY=AIza-...", language="bash")
 
-        st.markdown("---")
+        st.divider()
         st.markdown("#### How it works")
         st.markdown(
-            "1. Paste your **Job Description**\n"
-            "2. Upload **PDF resumes** (multiple OK)\n"
-            "3. Hit **Analyse** — cosine similarity on sentence embeddings\n"
-            "4. **Gemini** writes the narrative insights (free)"
+            "1. Paste **Job Description**\n"
+            "2. Upload **PDF resumes**\n"
+            "3. Click **Analyse**\n"
+            "4. Get ranked results instantly"
         )
-        st.markdown("---")
-        st.caption(f"Embedding: `all-MiniLM-L6-v2`  ·  LLM: `{active_llm()}`")
+        st.divider()
+        st.caption(f"LLM: `{active_llm()}`\nEmbedding: `all-MiniLM-L6-v2`")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
 # INPUT PANEL
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
 
 def render_input_panel() -> tuple:
     """
-    Render the two-column input area (JD + PDF uploader) and the Analyse button.
-
-    Returns:
-        Tuple of (jd_text: str, uploaded_files: list, analyse_clicked: bool).
+    Render JD textarea + PDF uploader side by side.
+    Returns (jd_text, uploaded_files, analyse_clicked).
     """
     col_left, col_right = st.columns([1, 1], gap="large")
 
@@ -116,116 +98,108 @@ def render_input_panel() -> tuple:
             label_visibility="collapsed",
         )
         if uploaded_files:
-            st.caption(f"{len(uploaded_files)} file(s) selected")
+            st.caption(f"✅ {len(uploaded_files)} file(s) selected")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    analyse_clicked = st.button("🎯  Analyse Candidates", use_container_width=True)
+    st.markdown(" ")
+    analyse_clicked = st.button(
+        "🔍  Analyse Candidates",
+        use_container_width=True,
+        type="primary",
+    )
 
     return jd_text, uploaded_files, analyse_clicked
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
 # SUMMARY METRICS
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
 
 def render_summary_metrics(results: list[dict]) -> None:
-    """
-    Show a 4-column strip of summary metrics above the result cards.
-
-    Args:
-        results: Ranked list of candidate dicts (must include "insights").
-    """
+    """Show 4-column summary strip + top candidate callout."""
     strong   = sum(1 for r in results if r["insights"]["recommendation"] == "Strong Fit")
     moderate = sum(1 for r in results if r["insights"]["recommendation"] == "Moderate Fit")
     not_fit  = sum(1 for r in results if r["insights"]["recommendation"] == "Not Fit")
 
-    st.markdown("---")
+    st.divider()
     st.markdown("### 📊 Screening Summary")
 
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Candidates",   len(results))
-    m2.metric("Strong Fit",   strong)
-    m3.metric("Moderate Fit", moderate)
-    m4.metric("Not Fit",      not_fit)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Total Candidates", len(results))
+    c2.metric("✅ Strong Fit",    strong)
+    c3.metric("🟡 Moderate Fit",  moderate)
+    c4.metric("❌ Not Fit",       not_fit)
 
-    # Top-candidate callout
     top = results[0]
     st.success(
-        f"🏆 **Top candidate:** {top['name']} — "
-        f"Score **{top['score']}/100** · {top['insights']['recommendation']}"
+        f"🏆 **Top Candidate:** {top['name']}  |  "
+        f"Score: **{top['score']}/100**  |  {top['insights']['recommendation']}"
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# CANDIDATE CARD
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
+# CANDIDATE CARD  (native Streamlit — no raw HTML)
+# =============================================================================
 
 def render_candidate_card(rank: int, name: str, score: float, insights: dict) -> None:
     """
-    Render a single candidate result as a styled HTML card.
-
-    Args:
-        rank:     1-based ranking position.
-        name:     Candidate display name.
-        score:    Match score (0–100).
-        insights: Dict with "strengths", "gaps", "recommendation", "source".
+    Render one candidate result using native Streamlit widgets.
+    No raw HTML — works reliably on all Streamlit versions.
     """
-    color   = _score_color(score)
-    rec     = insights["recommendation"]
-    b_class = _badge_class(rec)
-    source  = insights.get("source", "rules")
+    rec    = insights["recommendation"]
+    source = insights.get("source", "rules")
+
+    # Colour and emoji based on recommendation
+    rec_config = {
+        "Strong Fit":   ("🟢", "green",  "✅ Strong Fit"),
+        "Moderate Fit": ("🟡", "orange", "🟡 Moderate Fit"),
+        "Not Fit":      ("🔴", "red",    "❌ Not Fit"),
+    }
+    dot, color, rec_label = rec_config.get(rec, ("⚪", "gray", rec))
 
     source_label = {
-        "gemini": "✨ Gemini 2.5 Flash Lite",
+        "gemini": "✨ Gemini AI",
         "rules":  "🔑 Keyword Rules",
     }.get(source, "🔑 Keyword Rules")
 
-    strengths_html = "".join(f"<li>{s}</li>" for s in insights["strengths"])
-    gaps_html      = "".join(f"<li>{g}</li>" for g in insights["gaps"])
+    # Card container using Streamlit's native container + border
+    with st.container(border=True):
 
-    st.markdown(f"""
-    <div class="card">
-        <div class="card-rank">#{rank}</div>
-        <div class="card-name">{name}</div>
+        # ── Header row: rank · name · badge ──────────────────────────────────
+        h_col1, h_col2 = st.columns([3, 1])
+        with h_col1:
+            st.markdown(f"### #{rank}  {name}")
+        with h_col2:
+            st.markdown(
+                f"<div style='text-align:right;padding-top:8px;'>"
+                f"<span style='background:{'#14532d' if rec=='Strong Fit' else '#451a03' if rec=='Moderate Fit' else '#450a0a'};"
+                f"color:{'#86efac' if rec=='Strong Fit' else '#fcd34d' if rec=='Moderate Fit' else '#fca5a5'};"
+                f"padding:4px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;'>"
+                f"{rec_label}</span></div>",
+                unsafe_allow_html=True,
+            )
 
-        <div class="card-score-wrap">
-            <span class="score-pill" style="color:{color};">{score}</span>
-            <div class="score-bar-bg">
-                <div class="score-bar-fill"
-                     style="width:{score}%; background:{color};"></div>
-            </div>
-            <span class="badge {b_class}">{rec}</span>
-            <span style="font-size:.65rem;color:#6b7280;font-family:'DM Mono',monospace;">
-                {source_label}
-            </span>
-        </div>
+        # ── Score bar ─────────────────────────────────────────────────────────
+        score_col, bar_col = st.columns([1, 4])
+        with score_col:
+            bar_color = "#22c55e" if score >= 70 else "#f59e0b" if score >= 50 else "#ef4444"
+            st.markdown(
+                f"<p style='font-size:2.2rem;font-weight:700;color:{bar_color};"
+                f"margin:0;line-height:1.2;'>{score}<span style='font-size:1rem;"
+                f"color:#6b7280;'>/100</span></p>",
+                unsafe_allow_html=True,
+            )
+        with bar_col:
+            st.progress(int(score), text=f"Match Score  ·  {source_label}")
 
-        <div class="section-label">✦ Key Strengths</div>
-        <ul class="insight-list">{strengths_html}</ul>
+        # ── Strengths & Gaps side by side ─────────────────────────────────────
+        s_col, g_col = st.columns(2)
 
-        <div class="section-label">✦ Key Gaps</div>
-        <ul class="insight-list gaps">{gaps_html}</ul>
-    </div>
-    """, unsafe_allow_html=True)
+        with s_col:
+            st.markdown("**✦ Key Strengths**")
+            for s in insights.get("strengths", []):
+                st.markdown(f"- ✅ {s}")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# PRIVATE HELPERS
-# ─────────────────────────────────────────────────────────────────────────────
-
-def _score_color(score: float) -> str:
-    """Return a CSS hex color based on the score tier."""
-    if score >= 70:
-        return "#c8f135"   # lime   — Strong Fit
-    elif score >= 50:
-        return "#f59e0b"   # amber  — Moderate Fit
-    return "#ef4444"       # red    — Not Fit
-
-
-def _badge_class(recommendation: str) -> str:
-    """Return the CSS class name for the recommendation badge."""
-    return {
-        "Strong Fit":   "badge-strong",
-        "Moderate Fit": "badge-moderate",
-        "Not Fit":      "badge-notfit",
-    }.get(recommendation, "badge-moderate")
+        with g_col:
+            st.markdown("**✦ Key Gaps**")
+            for g in insights.get("gaps", []):
+                st.markdown(f"- ⚠️ {g}")

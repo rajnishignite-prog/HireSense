@@ -1,6 +1,6 @@
 # 🎯 HireSense — AI Resume Screening System
 
-An AI-powered resume screener built with **Streamlit** and **Google Gemini 2.5 Flash Lite** (free).  
+An AI-powered resume screener built with **Streamlit** and **Google Gemini 2.5 Flash Lite** .  
 Upload multiple candidate PDFs, paste a Job Description, and get instant ranked results with scores, strengths, gaps, and recommendations.
 
 ---
@@ -10,7 +10,7 @@ Upload multiple candidate PDFs, paste a Job Description, and get instant ranked 
 - 📄 Upload multiple PDF resumes at once
 - 🧠 Semantic matching using `sentence-transformers` (all-MiniLM-L6-v2)
 - 📊 Match score (0–100) via cosine similarity
-- ✨ AI-generated strengths, gaps & recommendation via **Gemini 2.5 Flash Lite** (free)
+- ✨ AI-generated strengths, gaps & recommendation via **Gemini 2.5 Flash Lite** 
 - 🏆 Candidate ranking (highest to lowest)
 - ⬇️ Download results as CSV
 - 🔑 API key stored safely in `.env` — never exposed on GitHub
@@ -52,7 +52,7 @@ resume_screener/
 | Embeddings | `sentence-transformers` (all-MiniLM-L6-v2) |
 | Similarity | `scikit-learn` cosine similarity |
 | PDF parsing | PyPDF2 |
-| LLM (free) | Google Gemini 2.5 Flash Lite |
+| LLM  | Google Gemini 2.5 Flash Lite |
 | Config | `python-dotenv` |
 
 ---
@@ -81,7 +81,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Add your free Gemini API key
+### 3. Add your Gemini API key
 
 ```bash
 cp .env.example .env
@@ -92,7 +92,7 @@ Open `.env` and add your key:
 GOOGLE_API_KEY=AIza-your-key-here
 ```
 
-> **Get a free key** (no credit card needed) at 👉 [aistudio.google.com](https://aistudio.google.com) → click **Get API key**
+> **Get a  key** (no credit card needed) at 👉 [aistudio.google.com](https://aistudio.google.com) → click **Get API key**
 
 ### 4. Run the app
 
@@ -124,7 +124,7 @@ Job Description ──► Sentence Embeddings (all-MiniLM-L6-v2)
               Cosine Similarity Score (0–100)
                       │
                       ▼
-           Gemini 2.5 Flash Lite (free)
+           Gemini 2.5 Flash Lite ()
            → Strengths, Gaps, Recommendation
                       │
                       ▼

@@ -3,7 +3,7 @@ modules/insights.py
 ===================
 Generates candidate strengths, gaps, and recommendation text.
 
-LLM: Google Gemini 2.5 Flash Lite (FREE)
+LLM: Google Gemini 2.5 Flash Lite 
   - Uses the new `google.genai` SDK (replaces deprecated google.generativeai)
   - Falls back to keyword rules if GOOGLE_API_KEY is not set in .env
 
@@ -81,7 +81,7 @@ def get_insights(jd: str, resume_text: str, score: float) -> dict:
 
 
 # =============================================================================
-# STRATEGY 1 — Gemini 2.5 Flash Lite (FREE, new google.genai SDK)
+# STRATEGY 1 — Gemini 2.5 Flash Lite ( new google.genai SDK)
 # =============================================================================
 
 def _gemini_insights(jd: str, resume_text: str, score: float):
