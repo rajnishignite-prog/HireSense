@@ -33,18 +33,18 @@ def render_sidebar() -> None:
     Render the configuration sidebar.
     Shows which LLM is active based on .env — no user key input.
     """
-    from modules.config import GOOGLE_API_KEY, active_llm
+    from modules.config import GEMINI_API_KEY, active_llm
 
     with st.sidebar:
         st.markdown("## ⚙️ HireSense")
         st.divider()
 
         st.markdown("#### 🔌 Active LLM")
-        if GOOGLE_API_KEY:
+        if GEMINI_API_KEY:
             st.success(" Gemini 2.5 Flash Lite — active", icon="✅")
         else:
             st.warning(
-                "No `GOOGLE_API_KEY` in `.env`.\n\nUsing keyword rules fallback.",
+                "No `GEMINI_API_KEY` in `.env`.\n\nUsing keyword rules fallback.",
                 icon="⚠️",
             )
 
@@ -55,7 +55,7 @@ def render_sidebar() -> None:
             "2. Click **Get API key** — no credit card\n"
             "3. Add to `.env`:"
         )
-        st.code("GOOGLE_API_KEY=AIza-...", language="bash")
+        st.code("GEMINI_API_KEY=AIza-...", language="bash")
 
         st.divider()
         st.markdown("#### How it works")

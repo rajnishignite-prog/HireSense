@@ -5,7 +5,7 @@ Generates candidate strengths, gaps, and recommendation text.
 
 LLM: Google Gemini 2.5 Flash Lite 
   - Uses the new `google.genai` SDK (replaces deprecated google.generativeai)
-  - Falls back to keyword rules if GOOGLE_API_KEY is not set in .env
+  - Falls back to keyword rules if GEMINI_API_KEY is not set in .env
 
 Public API:
   get_insights(jd, resume_text, score) -> dict
@@ -17,7 +17,7 @@ import re
 from google import genai
 from google.genai import types
 
-from modules.config import GOOGLE_API_KEY
+from modules.config import GEMINI_API_KEY
 from modules.scorer import get_recommendation
 
 # -- Model --------------------------------------------------------------------
@@ -69,7 +69,7 @@ def get_insights(jd: str, resume_text: str, score: float) -> dict:
     Generate structured insights for one candidate.
     Tries Gemini first, falls back to keyword rules if key missing or error.
     """
-    if GOOGLE_API_KEY:
+    if GEMINI_API_KEY:
         result = _gemini_insights(jd, resume_text, score)
         if result:
             result["source"] = "gemini"
@@ -96,7 +96,7 @@ def _gemini_insights(jd: str, resume_text: str, score: float):
     )
 
     try:
-        client   = genai.Client(api_key=GOOGLE_API_KEY)
+        client   = genai.Client(api_key=GEMINI_API_KEY)
         response = client.models.generate_content(
             model    = GEMINI_MODEL,
             contents = prompt,

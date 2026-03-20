@@ -20,19 +20,16 @@ Upload multiple candidate PDFs, paste a Job Description, and get instant ranked 
 ## 🗂️ Project Structure
 
 ```
-resume_screener/
+HireSense/
 │
-├── app.py                  ← Entry point (streamlit run app.py)
+├── app.py                  ← Entry point 
 ├── requirements.txt        ← Python dependencies
-├── .env.example            ← API key template (safe to commit)
-├── .env                    ← Your real key (git ignored)
+├── .env                    ← Your real key 
 ├── .gitignore
-├── setup.bat               ← One-click setup for Windows
-├── setup.sh                ← One-click setup for Mac/Linux
 │
 └── modules/
     ├── __init__.py
-    ├── config.py           ← Loads .env, exposes GOOGLE_API_KEY
+    ├── config.py           ← Loads .env, exposes GEMINI_API_KEY
     ├── ui.py               ← App orchestrator
     ├── components.py       ← Reusable Streamlit UI widgets
     ├── styles.py           ← All custom CSS
@@ -89,10 +86,10 @@ cp .env.example .env
 
 Open `.env` and add your key:
 ```
-GOOGLE_API_KEY=AIza-your-key-here
+GEMINI_API_KEY=AIza-your-key-here
 ```
 
-> **Get a  key** (no credit card needed) at 👉 [aistudio.google.com](https://aistudio.google.com) → click **Get API key**
+> **Get a  key**  at 👉 [aistudio.google.com](https://aistudio.google.com) → click **Get API key**
 
 ### 4. Run the app
 
