@@ -22,7 +22,7 @@ def render_hero() -> None:
     """Render the branded page header."""
     st.markdown("""
     <div class="hero">
-        <span class="hero-title">HireSense</span>
+        <span class="hero-title">ResumeIQ</span>
         <span class="hero-badge">AI · MVP</span>
     </div>
     <p class="hero-sub">
@@ -40,11 +40,10 @@ def render_sidebar() -> None:
     """
     Render the configuration sidebar.
 
-    API keys are read from the .env file (via config.py) — NOT entered here.
-    The sidebar simply shows which LLM is active based on what keys are loaded.
+    API key is read from the .env file (via config.py) — NOT entered here.
+    The sidebar shows which engine is active based on what key is loaded.
     """
-    from modules.config import ANTHROPIC_API_KEY, GOOGLE_API_KEY, active_llm
-    from modules.insights import is_gemini_available
+    from modules.config import GOOGLE_API_KEY, active_llm
 
     with st.sidebar:
         st.markdown("### ⚙️ Configuration")
@@ -53,49 +52,37 @@ def render_sidebar() -> None:
         # ── Active LLM status ────────────────────────────────────────────────
         st.markdown("#### 🔌 Active LLM")
 
-        if ANTHROPIC_API_KEY:
-            st.success("⚡ **Claude** (Anthropic) — active", icon="✅")
+        if GOOGLE_API_KEY:
+            st.success("✨ **Gemini 2.5 Flash Lite** — active (free)", icon="✅")
         else:
-            st.caption("No `ANTHROPIC_API_KEY` found in `.env`")
-
-        if GOOGLE_API_KEY and is_gemini_available():
-            label = "✨ **Gemini** (Google) — active as secondary"
-            if ANTHROPIC_API_KEY:
-                label += " *(unused while Claude is set)*"
-            st.info(label)
-        elif GOOGLE_API_KEY and not is_gemini_available():
-            st.warning("`GOOGLE_API_KEY` set but `google-generativeai` not installed.")
-
-        if not ANTHROPIC_API_KEY and not GOOGLE_API_KEY:
             st.warning(
-                "No API keys found — using **keyword rules** fallback.\n\n"
-                "Add keys to your `.env` file to enable LLM insights.",
+                "No `GOOGLE_API_KEY` found in `.env`.\n\n"
+                "Using **keyword rules** fallback instead.",
                 icon="⚠️",
             )
 
         st.markdown("---")
-        st.markdown("#### 🔑 Setting up keys")
-        st.code(
-            "# .env (project root — never commit this!)\n"
-            "ANTHROPIC_API_KEY=sk-ant-...\n"
-            "GOOGLE_API_KEY=AIza-...   # optional",
-            language="bash",
+
+        # ── Setup instructions ───────────────────────────────────────────────
+        st.markdown("#### 🔑 Get your free key")
+        st.markdown(
+            "1. Go to [aistudio.google.com](https://aistudio.google.com)\n"
+            "2. Click **Get API key** — free, no credit card\n"
+            "3. Add it to your `.env` file:"
         )
-        st.caption(
-            "`.env` is in `.gitignore` — your keys are safe.\n"
-            "Copy `.env.example` → `.env` and fill in your values."
-        )
+        st.code("GOOGLE_API_KEY=AIza-your-key-here", language="bash")
+        st.caption("`.env` is in `.gitignore` — never committed to GitHub.")
 
         st.markdown("---")
         st.markdown("#### How it works")
-        st.markdown("""
-1. Paste your **Job Description**
-2. Upload **PDF resumes** (multiple OK)
-3. Hit **Analyse** — cosine similarity on sentence embeddings
-4. **Claude** (or Gemini) writes the narrative insights
-        """)
+        st.markdown(
+            "1. Paste your **Job Description**\n"
+            "2. Upload **PDF resumes** (multiple OK)\n"
+            "3. Hit **Analyse** — cosine similarity on sentence embeddings\n"
+            "4. **Gemini** writes the narrative insights (free)"
+        )
         st.markdown("---")
-        st.caption(f"Embedding model: `all-MiniLM-L6-v2`  ·  LLM: `{active_llm()}`")
+        st.caption(f"Embedding: `all-MiniLM-L6-v2`  ·  LLM: `{active_llm()}`")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -189,8 +176,7 @@ def render_candidate_card(rank: int, name: str, score: float, insights: dict) ->
     source  = insights.get("source", "rules")
 
     source_label = {
-        "claude": "⚡ Claude AI",
-        "gemini": "✨ Gemini AI",
+        "gemini": "✨ Gemini 2.5 Flash Lite",
         "rules":  "🔑 Keyword Rules",
     }.get(source, "🔑 Keyword Rules")
 

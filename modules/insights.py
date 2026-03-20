@@ -3,12 +3,9 @@ modules/insights.py
 ===================
 Generates candidate strengths, gaps, and recommendation text.
 
-LLM used: Google Gemini 2.5 Flash Lite (FREE via Google AI Studio)
-  - Sign up at https://aistudio.google.com  →  free API key instantly
-  - No credit card required
+LLM: Google Gemini 2.5 Flash Lite (FREE)
+  - Uses the new `google.genai` SDK (replaces deprecated google.generativeai)
   - Falls back to keyword rules if GOOGLE_API_KEY is not set in .env
-
-Key is loaded from .env via modules/config.py — never from user input.
 
 Public API:
   get_insights(jd, resume_text, score) -> dict
@@ -17,15 +14,16 @@ Public API:
 import json
 import re
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from modules.config import GOOGLE_API_KEY
 from modules.scorer import get_recommendation
 
 # -- Model --------------------------------------------------------------------
-GEMINI_MODEL = "gemini-2.5-flash-lite-preview-06-17"   # free tier
+GEMINI_MODEL = "gemini-2.5-flash-lite-preview-06-17"
 
-# -- Max chars sent to LLM per request ----------------------------------------
+# -- Max chars sent to LLM ----------------------------------------------------
 MAX_CHARS = 3000
 
 # -- Keyword pool for rule-based fallback -------------------------------------
@@ -62,26 +60,14 @@ The embedding-based similarity score is {score}/100 (for context only).
 """
 
 
+# =============================================================================
 # PUBLIC ENTRY POINT
+# =============================================================================
 
 def get_insights(jd: str, resume_text: str, score: float) -> dict:
     """
     Generate structured insights for one candidate.
-
-    Uses Gemini 2.5 Flash Lite (free). Falls back to keyword rules
-    if GOOGLE_API_KEY is missing or any error occurs.
-
-    Args:
-        jd:          Full job description text.
-        resume_text: Extracted resume text.
-        score:       Normalised match score (0-100).
-
-    Returns:
-        dict:
-            "strengths"      -> list[str]  (2-3 items)
-            "gaps"           -> list[str]  (2-3 items)
-            "recommendation" -> str  ("Strong Fit" | "Moderate Fit" | "Not Fit")
-            "source"         -> str  ("gemini" | "rules")
+    Tries Gemini first, falls back to keyword rules if key missing or error.
     """
     if GOOGLE_API_KEY:
         result = _gemini_insights(jd, resume_text, score)
@@ -89,20 +75,19 @@ def get_insights(jd: str, resume_text: str, score: float) -> dict:
             result["source"] = "gemini"
             return result
 
-    # Fallback — no key set or Gemini call failed
     result = _rule_based_insights(jd, resume_text, score)
     result["source"] = "rules"
     return result
 
 
-# STRATEGY 1 — Gemini 2.5 Flash Lite (FREE)
+# =============================================================================
+# STRATEGY 1 — Gemini 2.5 Flash Lite (FREE, new google.genai SDK)
+# =============================================================================
+
 def _gemini_insights(jd: str, resume_text: str, score: float):
     """
-    Call Gemini 2.5 Flash Lite and parse structured JSON response.
-    API key is read from GOOGLE_API_KEY in .env — never from user input.
-
-    Returns:
-        Parsed dict on success, None on any error (caller falls to rules).
+    Call Gemini 2.5 Flash Lite using the new google.genai SDK.
+    Returns parsed dict on success, None on any error.
     """
     prompt = _PROMPT_TEMPLATE.format(
         score  = score,
@@ -111,10 +96,18 @@ def _gemini_insights(jd: str, resume_text: str, score: float):
     )
 
     try:
-        genai.configure(api_key=GOOGLE_API_KEY)
-        model    = genai.GenerativeModel(GEMINI_MODEL)
-        response = model.generate_content(prompt)
-
+        client   = genai.Client(api_key=GOOGLE_API_KEY)
+        response = client.models.generate_content(
+            model    = GEMINI_MODEL,
+            contents = prompt,
+            config   = types.GenerateContentConfig(
+                system_instruction=(
+                    "You are a precise JSON-only responder. "
+                    "Output valid JSON with no markdown fences, no extra text."
+                ),
+                temperature = 0.2,
+            ),
+        )
         raw = response.text.strip()
         return _parse_and_validate(_strip_fences(raw), score)
 
@@ -122,13 +115,12 @@ def _gemini_insights(jd: str, resume_text: str, score: float):
         return None
 
 
+# =============================================================================
 # STRATEGY 2 — Rule-based keyword matching (FALLBACK, no API needed)
+# =============================================================================
 
 def _rule_based_insights(jd: str, resume_text: str, score: float) -> dict:
-    """
-    Deterministic keyword comparison — no network calls, no API key needed.
-    Compares skills from SKILL_POOL that appear in both JD and resume.
-    """
+    """Deterministic keyword comparison — no network calls, no API key needed."""
     jd_lower     = jd.lower()
     resume_lower = resume_text.lower()
 
@@ -153,18 +145,16 @@ def _rule_based_insights(jd: str, resume_text: str, score: float) -> dict:
 
 
 # =============================================================================
-# SHARED HELPERS
+# HELPERS
 # =============================================================================
 
 def _strip_fences(text: str) -> str:
-    """Strip markdown code fences that some LLMs add despite being told not to."""
     text = re.sub(r"^```[a-z]*\n?", "", text)
     text = re.sub(r"\n?```$",       "", text)
     return text.strip()
 
 
 def _parse_and_validate(raw_json: str, score: float):
-    """Parse raw JSON and validate expected keys. Returns dict or None."""
     try:
         data           = json.loads(raw_json)
         strengths      = data.get("strengths",      [])
@@ -181,6 +171,5 @@ def _parse_and_validate(raw_json: str, score: float):
             "gaps":           gaps[:3],
             "recommendation": recommendation,
         }
-
     except (json.JSONDecodeError, AttributeError):
         return None
